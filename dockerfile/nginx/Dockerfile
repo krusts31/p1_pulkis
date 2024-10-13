@@ -1,9 +1,9 @@
-FROM alpine:latest as base
+FROM alpine:3.20 AS base
 
 RUN apk update &&\
 	apk upgrade &&\
 	apk add --no-cache\
-	tzdata &&\
+	tzdata\
 	nginx
 
 RUN mkdir -p /run/nginx
