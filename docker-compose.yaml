@@ -1,0 +1,127 @@
+services:
+  influxdb:
+    restart: on-failure
+    build:
+      context: ./dockerfile/influxdb
+    container_name: influxdb
+    hostname: influxdb
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=${INFLUXDB_DB}
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_ADMIN_USER}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
+    networks:
+      - p1_port_net
+
+  nginx:
+    restart: on-failure
+    build:
+      context: ./dockerfile/nginx
+    container_name: nginx
+    hostname: nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    depends_on:
+      - influxdb
+      - grafana
+      - mosquitto
+    networks:
+      - p1_port_net
+
+  grafana:
+    restart: on-failure
+    hostname: grafana
+    build:
+      context: ./dockerfile/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    depends_on:
+      - influxdb
+    networks:
+      - p1_port_net
+
+  mosquitto:
+    hostname: mosquitto
+    restart: on-failure
+    build:
+      context: ./dockerfile/mosquitto
+    container_name: mosquitto
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - /configs/mosquitto.conf:/etc/config/mosquitto.conf
+      - /certs/mosquitto:/etc/mosquitto/certs
+    networks:
+      - p1_port_net
+
+  telegraf:
+    hostname: telegraf
+    restart: on-failure
+    build:
+      context: ./dockerfile/telegraf
+    container_name: telegraf
+    volumes:
+      - ./configs/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+    depends_on:
+      - influxdb
+    networks:
+      - p1_port_net
+
+  casdoor:
+    restart: on-failure
+    hostname: casdoor
+    build:
+      context: ./casdoor
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - p1_port_net
+    environment:
+      POSTGRES_USER:        ${POSTGRES_USER}
+      POSTGRES_PASSWORD:    ${POSTGRES_PASSWORD}
+      POSTGRES_HOST:        ${POSTGRES_HOST}
+      POSTGRES_PORT:        ${POSTGRES_PORT}
+      driverName:           ${DRIVERNAME}
+      dbName:               ${CASDOOR_DB_NAME}
+      dataSourceName:       "user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} host=${POSTGRES_HOST} port=${POSTGRES_PORT} sslmode=disable dbname=${CASDOOR_DB_NAME}"
+
+  postgres:
+    restart: on-failure
+    hostname: postgres
+    container_name: postgres
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:delegated
+    networks:
+      - p1_port_net
+    environment:
+      POSTGRES_PASSWORD:    ${POSTGRES_PASSWORD}
+      POSTGRES_USER:        ${POSTGRES_USER}
+      POSTGRES_DB:          ${POSTGRES_DB}
+      PGDATA:               /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      timeout: 3s
+
+
+volumes:
+  influxdb_data:
+  grafana_data:
+  mosquitto_data:
+  postgres_data:
+
+networks:
+  p1_port_net:
+    driver: bridge
