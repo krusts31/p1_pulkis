@@ -9,7 +9,7 @@ domains=("$@")
 
 rsa_key_size=4096
 data_path="$DIR"
-email="" # Adding a valid address is strongly recommended
+email="krusts31@gmail.com" # Adding a valid address is strongly recommended
 
 if [ ! -e "$data_path/conf/options-ssl-nginx.conf" ] || [ ! -e "$data_path/conf/ssl-dhparams.pem" ]; then
   echo "### Downloading recommended TLS parameters ..."
