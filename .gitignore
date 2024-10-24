@@ -1,5 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/vim,zsh,linux,visualstudiocode,git,python,certificates,windows,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=vim,zsh,linux,visualstudiocode,git,python,certificates,windows,macos
+root-ca/
 
 ### certificates ###
 *.pem
