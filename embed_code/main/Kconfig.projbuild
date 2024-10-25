@@ -1,0 +1,82 @@
+menu "Example Connection Configuration"
+    config BROKER_URI
+        string "Broker URL"
+        default "mqtts://mqtt.eclipse.org:8883"
+        help
+            URL of an mqtt broker which this example connects to.
+
+    config BROKER_CERTIFICATE_OVERRIDE
+        string "Broker certificate override"
+        default ""
+        help
+            Please leave empty if broker certificate included from a textfile; otherwise fill in a base64 part of PEM
+            format certificate
+
+    config BROKER_CERTIFICATE_OVERRIDDEN
+        bool
+        default y if BROKER_CERTIFICATE_OVERRIDE != ""
+choice EXAMPLE_IP_MODE
+    prompt "IP Version"
+    help
+       Example can use either IPV4 or IPV6.
+
+config EXAMPLE_IPV4
+    bool "IPV4"
+
+config EXAMPLE_IPV6
+   bool "IPV6"
+   select EXAMPLE_CONNECT_IPV6
+
+endchoice
+
+config EXAMPLE_PORT
+    int "Port"
+    range 0 65535
+    default 3333
+    help
+        Local port the example server will listen on.
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+            Can be left blank if the network has no security set.
+
+    config EXAMPLE_CONNECT_IPV6
+        bool "Obtain IPv6 address"
+        default n
+        select LWIP_IPV6
+        help
+            By default, examples will wait until IPv4 and IPv6 local link addresses are obtained.
+            Disable this option if the network does not support IPv6.
+            Choose the preferred IPv6 address type if the connection code should wait until other than
+            the local link address gets assigned.
+
+    if EXAMPLE_CONNECT_IPV6
+        choice EXAMPLE_CONNECT_PREFERRED_IPV6
+            prompt "Preferred IPv6 Type"
+            default EXAMPLE_CONNECT_IPV6_PREF_LOCAL_LINK
+            help
+                Select which kind of IPv6 address the connect logic waits for.
+
+            config EXAMPLE_CONNECT_IPV6_PREF_LOCAL_LINK
+                bool "Local Link Address"
+                help
+                    Blocks until Local link address assigned.
+
+            config EXAMPLE_CONNECT_IPV6_PREF_GLOBAL
+                bool "Global Address"
+                select LWIP_IPV6_AUTOCONFIG
+                help
+                    Blocks until Global address assigned.
+        endchoice
+
+    endif
+endmenu
